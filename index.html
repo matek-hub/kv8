@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Online teszt</title>
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+<h1>Online teszt felület</h1>
+
+<div id="login-box">
+  <p>Kérlek jelentkezz be Google fiókoddal a folytatáshoz:</p>
+  <div id="g_id_signin"></div>
+</div>
+
+<div id="app-box" style="display:none;">
+  <p>Bejelentkezve: <strong id="user-email"></strong>
+     (<a href="#" id="logout-link">kijelentkezés</a>)</p>
+
+  <div class="week-picker">
+    <label for="week-select">Hét kiválasztása:</label><br>
+    <select id="week-select"></select>
+    <br>
+    <button class="primary" id="start-btn">Teszt indítása (24 feladat)</button>
+  </div>
+
+  <p><a href="result.html">Eddigi eredmények megtekintése &rarr;</a></p>
+</div>
+
+<script>
+function decodeJwtEmail(token) {
+  var payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+  return payload.email;
+}
+
+function handleCredentialResponse(response) {
+  var email = decodeJwtEmail(response.credential);
+  sessionStorage.setItem('userEmail', email);
+  showApp(email);
+}
+
+function showApp(email) {
+  document.getElementById('login-box').style.display = 'none';
+  document.getElementById('app-box').style.display = 'block';
+  document.getElementById('user-email').textContent = email;
+}
+
+document.getElementById('logout-link').addEventListener('click', function (e) {
+  e.preventDefault();
+  sessionStorage.removeItem('userEmail');
+  sessionStorage.removeItem('currentWeek');
+  document.getElementById('app-box').style.display = 'none';
+  document.getElementById('login-box').style.display = 'block';
+});
+
+// hét legördülő feltöltése
+var sel = document.getElementById('week-select');
+for (var w = 1; w <= TOTAL_HET; w++) {
+  var opt = document.createElement('option');
+  opt.value = w;
+  opt.textContent = w + '. hét';
+  sel.appendChild(opt);
+}
+
+document.getElementById('start-btn').addEventListener('click', function () {
+  var week = parseInt(sel.value, 10);
+  sessionStorage.setItem('currentWeek', week);
+  var firstTest = (week - 1) * TESZT_PER_HET + 1;
+  window.location.href = firstTest + 'teszt_1feladat.html';
+});
+
+window.onload = function () {
+  var existingEmail = sessionStorage.getItem('userEmail');
+  if (existingEmail) { showApp(existingEmail); }
+
+  if (window.google && google.accounts) {
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleCredentialResponse
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('g_id_signin'),
+      { theme: 'outline', size: 'large' }
+    );
+  }
+};
+</script>
+</body>
+</html>
