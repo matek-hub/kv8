@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Eredmények</title>
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+</head>
+<body>
+<h1>Eredmények</h1>
+<p>Felhasználó: <strong id="user-email"></strong></p>
+
+<div class="week-picker">
+  <label for="week-select">Hét:</label>
+  <select id="week-select"></select>
+</div>
+
+<p id="status">Betöltés...</p>
+<table id="result-table" style="display:none;">
+  <thead>
+    <tr><th>Teszt</th><th>Feladat</th><th>Válasz</th><th>Helyes?</th></tr>
+  </thead>
+  <tbody id="result-body"></tbody>
+</table>
+<p id="score" style="font-size:1.2em; font-weight:bold;"></p>
+
+<p><a href="index.html">&larr; Vissza a kezdőlapra</a></p>
+
+<script>
+var email = sessionStorage.getItem('userEmail');
+if (!email) { window.location.href = 'index.html'; }
+document.getElementById('user-email').textContent = email;
+
+var sel = document.getElementById('week-select');
+for (var w = 1; w <= TOTAL_HET; w++) {
+  var opt = document.createElement('option');
+  opt.value = w;
+  opt.textContent = w + '. hét';
+  sel.appendChild(opt);
+}
+var storedWeek = sessionStorage.getItem('currentWeek');
+if (storedWeek) sel.value = storedWeek;
+
+function loadResults() {
+  var week = sel.value;
+  document.getElementById('status').textContent = 'Betöltés...';
+  document.getElementById('result-table').style.display = 'none';
+
+  var url = APPS_SCRIPT_URL + '?action=results&email=' + encodeURIComponent(email) + '&week=' + week;
+  fetch(url)
+    .then(function (r) { return r.json(); })
+    .then(function (rows) {
+      var tbody = document.getElementById('result-body');
+      tbody.innerHTML = '';
+      var score = 0;
+      rows.sort(function (a, b) { return a.test - b.test || a.feladat - b.feladat; });
+      rows.forEach(function (row) {
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + row.test + '</td><td>' + row.feladat + '</td>' +
+          '<td>' + row.letter + '</td>' +
+          '<td>' + (row.correct ? '✅ helyes' : '❌ helytelen') + '</td>';
+        tbody.appendChild(tr);
+        if (row.correct) score++;
+      });
+      document.getElementById('status').textContent = rows.length
+        ? '' : 'Ehhez a héthez még nincs beküldött válasz.';
+      document.getElementById('result-table').style.display = rows.length ? 'table' : 'none';
+      document.getElementById('score').textContent =
+        'Összpontszám: ' + score + ' / ' + rows.length;
+    })
+    .catch(function (err) {
+      document.getElementById('status').textContent = 'Hiba történt: ' + err;
+    });
+}
+
+sel.addEventListener('change', loadResults);
+loadResults();
+</script>
+</body>
+</html>
