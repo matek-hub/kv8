@@ -11,14 +11,14 @@
 <p>Felhasználó: <strong id="user-email"></strong></p>
 
 <div class="week-picker">
-  <label for="week-select">Hét:</label>
-  <select id="week-select"></select>
+  <label for="test-select">Teszt:</label>
+  <select id="test-select"></select>
 </div>
 
 <p id="status">Betöltés...</p>
 <table id="result-table" style="display:none;">
   <thead>
-    <tr><th>Teszt</th><th>Feladat</th><th>Válasz</th><th>Helyes?</th></tr>
+    <tr><th>Feladat</th><th>Válasz</th><th>Helyes?</th></tr>
   </thead>
   <tbody id="result-body"></tbody>
 </table>
@@ -31,39 +31,39 @@ var email = sessionStorage.getItem('userEmail');
 if (!email) { window.location.href = 'index.html'; }
 document.getElementById('user-email').textContent = email;
 
-var sel = document.getElementById('week-select');
-for (var w = 1; w <= TOTAL_HET; w++) {
+var sel = document.getElementById('test-select');
+for (var t = 1; t <= TOTAL_TESZT; t++) {
   var opt = document.createElement('option');
-  opt.value = w;
-  opt.textContent = w + '. hét';
+  opt.value = t;
+  opt.textContent = t + '. Teszt';
   sel.appendChild(opt);
 }
-var storedWeek = sessionStorage.getItem('currentWeek');
-if (storedWeek) sel.value = storedWeek;
+var storedTest = sessionStorage.getItem('currentTest');
+if (storedTest) sel.value = storedTest;
 
 function loadResults() {
-  var week = sel.value;
+  var test = sel.value;
   document.getElementById('status').textContent = 'Betöltés...';
   document.getElementById('result-table').style.display = 'none';
 
-  var url = APPS_SCRIPT_URL + '?action=results&email=' + encodeURIComponent(email) + '&week=' + week;
+  var url = APPS_SCRIPT_URL + '?action=results&email=' + encodeURIComponent(email) + '&test=' + test;
   fetch(url)
     .then(function (r) { return r.json(); })
     .then(function (rows) {
       var tbody = document.getElementById('result-body');
       tbody.innerHTML = '';
       var score = 0;
-      rows.sort(function (a, b) { return a.test - b.test || a.feladat - b.feladat; });
+      rows.sort(function (a, b) { return a.feladat - b.feladat; });
       rows.forEach(function (row) {
         var tr = document.createElement('tr');
-        tr.innerHTML = '<td>' + row.test + '</td><td>' + row.feladat + '</td>' +
+        tr.innerHTML = '<td>' + row.feladat + '</td>' +
           '<td>' + row.letter + '</td>' +
           '<td>' + (row.correct ? '✅ helyes' : '❌ helytelen') + '</td>';
         tbody.appendChild(tr);
         if (row.correct) score++;
       });
       document.getElementById('status').textContent = rows.length
-        ? '' : 'Ehhez a héthez még nincs beküldött válasz.';
+        ? '' : 'Ehhez a teszthez még nincs beküldött válasz.';
       document.getElementById('result-table').style.display = rows.length ? 'table' : 'none';
       document.getElementById('score').textContent =
         'Összpontszám: ' + score + ' / ' + rows.length;

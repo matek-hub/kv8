@@ -7,8 +7,8 @@
 <link rel="stylesheet" href="style.css">
 <script src="config.js"></script>
 </head>
-<body data-test="1" data-feladat="1" data-week="1">
-<h1>1. hét &ndash; 1. teszt</h1>
+<body data-test="1" data-feladat="1">
+<h1>1. Teszt</h1>
 <p><strong>1. feladat</strong></p>
 
 
@@ -50,7 +50,6 @@
     var body = document.body;
     var payload = {
       email: email,
-      week: body.dataset.week,
       test: body.dataset.test,
       feladat: body.dataset.feladat,
       letter: btn.dataset.letter
