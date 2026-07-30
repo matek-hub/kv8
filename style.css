@@ -92,9 +92,11 @@ button.answer-btn.selected { border-color: var(--amber); background: #fff7e6; fo
 button.answer-btn.correct { background: #e3faf0; border-color: var(--emerald); color: #047857; font-weight: 600; }
 button.answer-btn.incorrect { background: #fdecec; border-color: var(--rose); color: #b91c1c; font-weight: 600; }
 
+.ok { color: var(--emerald); }
+.bad { color: var(--rose); }
 #feedback { font-family: 'Poppins', Arial, sans-serif; }
-#feedback.ok { color: var(--emerald); font-weight: 700; }
-#feedback.bad { color: var(--rose); font-weight: 700; }
+#feedback.ok { font-weight: 700; }
+#feedback.bad { font-weight: 700; }
 
 .next-btn {
   display: inline-block;
@@ -125,8 +127,13 @@ button.primary {
   box-shadow: 0 6px 16px -6px rgba(76, 29, 149, 0.5);
 }
 button.primary:hover { filter: brightness(1.08); }
+button.primary:disabled, select:disabled {
+  background: #e5e7eb; color: #9ca3af; border-color: #e5e7eb;
+  cursor: not-allowed; box-shadow: none; filter: none;
+}
 
 .week-picker { margin: 1.5em 0; }
+tfoot th { background: #f1ecff; color: var(--violet-dark); }
 
 #score {
   display: inline-block;

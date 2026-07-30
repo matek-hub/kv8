@@ -25,9 +25,9 @@
 
   <div class="week-picker">
     <label for="test-select">Teszt kiválasztása:</label><br>
-    <select id="test-select"></select>
+    <select id="test-select" disabled></select>
     <br>
-    <button class="primary" id="start-btn">Teszt indítása (12 feladat)</button>
+    <button class="primary" id="start-btn" disabled>Teszt indítása (12 feladat)</button>
   </div>
 
   <p><a href="result.html">Eddigi eredmények megtekintése &rarr;</a></p>
@@ -57,10 +57,21 @@ function checkAuthorization(email) {
   fetch(APPS_SCRIPT_URL + '?action=whoami&email=' + encodeURIComponent(email))
     .then(function (r) { return r.json(); })
     .then(function (res) {
-      document.getElementById('auth-warning').style.display = res.authorized ? 'none' : 'block';
+      var authorized = !!res.authorized;
+      document.getElementById('auth-warning').style.display = authorized ? 'none' : 'block';
       document.getElementById('admin-link').style.display = (res.role === 'teacher') ? 'block' : 'none';
+      document.getElementById('test-select').disabled = !authorized;
+      document.getElementById('start-btn').disabled = !authorized;
     })
-    .catch(function () { /* a jogosultság-ellenőrzés hibája nem akadályozza a felület használatát */ });
+    .catch(function () {
+      // ha a jogosultság-ellenőrzés maga hibázik (pl. hálózati hiba), óvatosságból
+      // ne engedjük a tesztet elindítani, amíg nem sikerül megerősíteni a jogosultságot
+      document.getElementById('auth-warning').textContent =
+        'Nem sikerült ellenőrizni a jogosultságodat, próbáld frissíteni az oldalt.';
+      document.getElementById('auth-warning').style.display = 'block';
+      document.getElementById('test-select').disabled = true;
+      document.getElementById('start-btn').disabled = true;
+    });
 }
 
 document.getElementById('logout-link').addEventListener('click', function (e) {
