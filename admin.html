@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Tanári összesítő</title>
+<link rel="stylesheet" href="style.css">
+<script src="config.js"></script>
+</head>
+<body>
+<h1>Tanári összesítő</h1>
+<p>Bejelentkezve: <strong id="user-email"></strong></p>
+<p><a href="admin.html">Teszt szerinti nézet</a> | <a href="admin_student.html">Diák szerinti nézet</a></p>
+
+<div id="denied-box" style="display:none;">
+  <p id="denied-msg" class="bad" style="font-weight:600;"></p>
+  <p><a href="index.html">&larr; Vissza a kezdőlapra</a></p>
+</div>
+
+<div id="admin-box" style="display:none;">
+  <div class="week-picker">
+    <label for="test-select">Teszt:</label>
+    <select id="test-select"></select>
+  </div>
+
+  <p id="status">Betöltés...</p>
+  <div style="overflow-x:auto;">
+  <table id="result-table" style="display:none;">
+    <thead><tr id="header-row"></tr></thead>
+    <tbody id="result-body"></tbody>
+    <tfoot><tr id="footer-row"></tr></tfoot>
+  </table>
+  </div>
+
+  <p><a href="index.html">&larr; Vissza a kezdőlapra</a></p>
+</div>
+
+<script>
+var email = sessionStorage.getItem('userEmail');
+if (!email) { window.location.href = 'index.html'; }
+document.getElementById('user-email').textContent = email;
+
+function deny(msg) {
+  document.getElementById('denied-msg').textContent = msg;
+  document.getElementById('denied-box').style.display = 'block';
+  document.getElementById('admin-box').style.display = 'none';
+}
+
+function init() {
+  fetch(APPS_SCRIPT_URL + '?action=whoami&email=' + encodeURIComponent(email))
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (!res.authorized || res.role !== 'teacher') {
+        deny('Nincs jogosultságod ehhez az oldalhoz.');
+        return;
+      }
+      document.getElementById('admin-box').style.display = 'block';
+      setupTestSelector();
+      loadClassResults();
+    })
+    .catch(function (err) {
+      deny('Hiba a jogosultság ellenőrzésekor: ' + err);
+    });
+}
+
+function setupTestSelector() {
+  var sel = document.getElementById('test-select');
+  for (var t = 1; t <= TOTAL_TESZT; t++) {
+    var opt = document.createElement('option');
+    opt.value = t;
+    opt.textContent = t + '. Teszt';
+    sel.appendChild(opt);
+  }
+  sel.addEventListener('change', loadClassResults);
+}
+
+function cellSymbol(value) {
+  if (value === true) return '✅';
+  if (value === false) return '❌';
+  return '—';
+}
+
+function loadClassResults() {
+  var test = document.getElementById('test-select').value;
+  document.getElementById('status').textContent = 'Betöltés...';
+  document.getElementById('result-table').style.display = 'none';
+
+  var url = APPS_SCRIPT_URL + '?action=classResults&email=' + encodeURIComponent(email) + '&test=' + test;
+  fetch(url)
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data.error) {
+        document.getElementById('status').textContent = 'Hiba: ' + data.error;
+        return;
+      }
+      renderTable(data);
+    })
+    .catch(function (err) {
+      document.getElementById('status').textContent = 'Hiba történt: ' + err;
+    });
+}
+
+function renderTable(data) {
+  var n = data.feladatPerTeszt;
+  var test = data.test;
+
+  var headerRow = document.getElementById('header-row');
+  headerRow.innerHTML = '<th>Diák</th>';
+  for (var f = 1; f <= n; f++) {
+    var th = document.createElement('th');
+    th.innerHTML = '<a href="' + test + 'teszt/' + f + 'feladat.html" target="_blank">' + f + '</a>';
+    headerRow.appendChild(th);
+  }
+  var thScore = document.createElement('th');
+  thScore.textContent = 'Eredmény';
+  headerRow.appendChild(thScore);
+
+  var tbody = document.getElementById('result-body');
+  tbody.innerHTML = '';
+  data.students.forEach(function (s) {
+    var tr = document.createElement('tr');
+    var tdName = document.createElement('td');
+    tdName.textContent = s.name;
+    tdName.style.textAlign = 'left';
+    tr.appendChild(tdName);
+    for (var f = 1; f <= n; f++) {
+      var td = document.createElement('td');
+      td.textContent = cellSymbol(s.cells[f]);
+      tr.appendChild(td);
+    }
+    var tdPct = document.createElement('td');
+    tdPct.textContent = s.percent + '%';
+    tdPct.style.fontWeight = '600';
+    tr.appendChild(tdPct);
+    tbody.appendChild(tr);
+  });
+
+  var footerRow = document.getElementById('footer-row');
+  footerRow.innerHTML = '<th style="text-align:left;">Feladatonkénti siker</th>';
+  for (var f = 1; f <= n; f++) {
+    var th2 = document.createElement('th');
+    th2.textContent = data.feladatStats[f] + '%';
+    footerRow.appendChild(th2);
+  }
+  footerRow.appendChild(document.createElement('th'));
+
+  document.getElementById('status').textContent = data.students.length
+    ? '' : 'Nincs regisztrált diák a Students fülön.';
+  document.getElementById('result-table').style.display = data.students.length ? 'table' : 'none';
+}
+
+init();
+</script>
+</body>
+</html>

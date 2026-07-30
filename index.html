@@ -19,6 +19,10 @@
   <p>Bejelentkezve: <strong id="user-email"></strong>
      (<a href="#" id="logout-link">kijelentkezés</a>)</p>
 
+  <p id="auth-warning" class="bad" style="display:none; font-weight:600;">
+    Nincs jogosultságod tesztek kitöltéséhez - kérlek vedd fel a kapcsolatot a tanároddal.
+  </p>
+
   <div class="week-picker">
     <label for="test-select">Teszt kiválasztása:</label><br>
     <select id="test-select"></select>
@@ -27,6 +31,7 @@
   </div>
 
   <p><a href="result.html">Eddigi eredmények megtekintése &rarr;</a></p>
+  <p id="admin-link" style="display:none;"><a href="admin.html">Tanári összesítő megnyitása &rarr;</a></p>
 </div>
 
 <script>
@@ -45,6 +50,17 @@ function showApp(email) {
   document.getElementById('login-box').style.display = 'none';
   document.getElementById('app-box').style.display = 'block';
   document.getElementById('user-email').textContent = email;
+  checkAuthorization(email);
+}
+
+function checkAuthorization(email) {
+  fetch(APPS_SCRIPT_URL + '?action=whoami&email=' + encodeURIComponent(email))
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      document.getElementById('auth-warning').style.display = res.authorized ? 'none' : 'block';
+      document.getElementById('admin-link').style.display = (res.role === 'teacher') ? 'block' : 'none';
+    })
+    .catch(function () { /* a jogosultság-ellenőrzés hibája nem akadályozza a felület használatát */ });
 }
 
 document.getElementById('logout-link').addEventListener('click', function (e) {
