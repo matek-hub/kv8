@@ -1,6 +1,6 @@
 // Cseréld ki a saját, deployolt Google Apps Script Web App URL-re
 // (Apps Script szerkesztőben: Telepítés -> Új telepítés -> Webalkalmazás -> URL másolása)
-var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzNnGCJg7PdN0T10-o4NvSHLg9ciaeqmRx2neypY5UpkjeWBQyYHKHLfQlkFtuonxgcZA/exec';
+var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwiaMT99MJIX_c4fg9SMC85731-JQVkVzIskl759WcQvNqmTaq5f_uvHNmPP6RqpddxCA/exec';
 
 // Cseréld ki a saját Google OAuth Client ID-re
 // (Google Cloud Console -> APIs & Services -> Credentials -> OAuth 2.0 Client ID -> Web application)
