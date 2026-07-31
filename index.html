@@ -53,18 +53,33 @@ function showApp(email) {
   checkAuthorization(email);
 }
 
+function applyAuthResult(res) {
+  var authorized = !!res.authorized;
+  document.getElementById('auth-warning').style.display = authorized ? 'none' : 'block';
+  document.getElementById('admin-link').style.display = (res.role === 'teacher') ? 'block' : 'none';
+  document.getElementById('test-select').disabled = !authorized;
+  document.getElementById('start-btn').disabled = !authorized;
+}
+
 function checkAuthorization(email) {
+  var cacheKey = 'authCache:' + email;
+  var cached = sessionStorage.getItem(cacheKey);
+  if (cached) {
+    // korábbi (ugyanebben a böngésző-munkamenetben lekérdezett) eredmény azonnali
+    // megjelenítése, amíg a friss adat megérkezik a háttérben - így nem kell minden
+    // egyes oldalbetöltésnél kivárni az Apps Script válaszidejét
+    try { applyAuthResult(JSON.parse(cached)); } catch (e) { /* hibás cache, figyelmen kívül hagyva */ }
+  }
+
   fetch(APPS_SCRIPT_URL + '?action=whoami&email=' + encodeURIComponent(email))
     .then(function (r) { return r.json(); })
     .then(function (res) {
-      var authorized = !!res.authorized;
-      document.getElementById('auth-warning').style.display = authorized ? 'none' : 'block';
-      document.getElementById('admin-link').style.display = (res.role === 'teacher') ? 'block' : 'none';
-      document.getElementById('test-select').disabled = !authorized;
-      document.getElementById('start-btn').disabled = !authorized;
+      sessionStorage.setItem(cacheKey, JSON.stringify(res));
+      applyAuthResult(res);
     })
     .catch(function () {
-      // ha a jogosultság-ellenőrzés maga hibázik (pl. hálózati hiba), óvatosságból
+      if (cached) return; // volt korábbi, cache-elt eredmény, azt már megjelenítettük
+      // ha nincs semmilyen korábbi eredmény és a lekérdezés is hibázik, óvatosságból
       // ne engedjük a tesztet elindítani, amíg nem sikerül megerősíteni a jogosultságot
       document.getElementById('auth-warning').textContent =
         'Nem sikerült ellenőrizni a jogosultságodat, próbáld frissíteni az oldalt.';
