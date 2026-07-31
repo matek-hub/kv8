@@ -115,8 +115,17 @@ document.getElementById('start-btn').addEventListener('click', function () {
 window.onload = function () {
   var existingEmail = sessionStorage.getItem('userEmail');
   if (existingEmail) { showApp(existingEmail); }
+  waitForGoogleSignIn();
+};
 
-  if (window.google && google.accounts) {
+// A Google Sign-In szkript ASYNC módban töltődik, ezért NEM garantált, hogy pontosan
+// mikor lesz elérhető - lehet a window.onload előtt vagy után is. Ahelyett, hogy egyetlen
+// eseményre (pl. window.onload) hagyatkoznánk - ami versenyhelyzethez (race condition)
+// vezethet, és a gomb sosem jelenne meg, ha a szkript lassabban tölt be -, egyszerűen
+// rövid időközönként ellenőrizzük, elérhető-e már a google.accounts objektum.
+function waitForGoogleSignIn(attempt) {
+  attempt = attempt || 0;
+  if (window.google && window.google.accounts && google.accounts.id) {
     google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
       callback: handleCredentialResponse
@@ -125,8 +134,19 @@ window.onload = function () {
       document.getElementById('g_id_signin'),
       { theme: 'outline', size: 'large' }
     );
+    return;
   }
-};
+  if (attempt > 100) {
+    // kb. 10 másodperc után feladjuk - ekkorra már tényleg valami komolyabb gond van
+    // (pl. hálózati blokk, hirdetésblokkoló), nem csak lassú betöltés
+    document.getElementById('login-box').insertAdjacentHTML('beforeend',
+      '<p class="bad">Nem sikerült betölteni a Google bejelentkezést. ' +
+      'Próbáld frissíteni az oldalt, vagy ellenőrizd, nincs-e hirdetésblokkoló/böngésző-bővítmény, ' +
+      'ami blokkolja az accounts.google.com elérését.</p>');
+    return;
+  }
+  setTimeout(function () { waitForGoogleSignIn(attempt + 1); }, 100);
+}
 </script>
 </body>
 </html>
