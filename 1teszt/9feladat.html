@@ -59,18 +59,18 @@ Ha \(AB=10\) cm és \(AD=8\) cm, akkor az \(ABC\) háromszög területe:</p>
     btn.classList.add('selected');
 
     var body = document.body;
-    var payload = {
+    var params = new URLSearchParams({
+      action: 'submit',
       email: email,
       test: body.dataset.test,
       feladat: body.dataset.feladat,
       letter: btn.dataset.letter
-    };
+    });
 
-    fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(payload)
-    })
+    // GET kérést használunk POST helyett: a Google Apps Script Web App-oknál a POST
+    // kérések fetch()-csel gyakran "Failed to fetch" hibával futnak el (a szerver belső
+    // átirányítása miatt), miközben a GET kérések megbízhatóan működnek - lásd whoami is.
+    fetch(APPS_SCRIPT_URL + '?' + params.toString())
       .then(function (r) { return r.json(); })
       .then(function (res) {
         var fb = document.getElementById('feedback');
