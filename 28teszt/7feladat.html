@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>28. teszt - 7. feladat</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-mml-chtml.js"></script>
+<link rel="stylesheet" href="../style.css">
+<script src="../config.js"></script>
+</head>
+<body data-test="28" data-feladat="7">
+<h1>28. Teszt</h1>
+<p><strong>7. feladat</strong></p>
+
+<div class="figure-block" style="text-align:center; margin-bottom:1em;"><img src="img/fm1.png" style="max-width:100%;"></div>
+<div class="text-block"><p>A mellékelt ábrán az \(A\), \(B\), \(C\) , ebben a sorrendben ábrázolt, kollineáris pontok láthatóak. Az \(M\) pont az \(AB\) szakasz felezőpontja, a \(C\) pont pedig a \(B\) pontnak az \(N\) pontra vonatkoztatott szimmetrikusa. Ha \(AB=8\,\mathrm{cm}\) és \(AC=24\,\mathrm{cm}\), akkor a \(\dfrac{MN}{AC}\) aránt értéke:</p>
+
+<div class="answers" id="answers">
+<button type="button" class="answer-btn" data-slot="a" onclick="selectAnswer(this)"></button>
+<button type="button" class="answer-btn" data-slot="b" onclick="selectAnswer(this)"></button>
+<button type="button" class="answer-btn" data-slot="c" onclick="selectAnswer(this)"></button>
+<button type="button" class="answer-btn" data-slot="d" onclick="selectAnswer(this)"></button>
+</div></div>
+
+<script type="application/json" id="answer-data">[{"letter": "a", "text": "\\(\\dfrac{1}{6}\\)"}, {"letter": "b", "text": "\\(\\dfrac{1}{4}\\)"}, {"letter": "c", "text": "\\(\\dfrac{1}{3}\\)"}, {"letter": "d", "text": "\\(\\dfrac{1}{2}\\)"}]</script>
+
+<p id="feedback"></p>
+<p><a id="next-link" class="next-btn" href="8feladat.html" style="display:none;">Következő feladat &rarr;</a></p>
+
+<script>
+(function () {
+  var email = sessionStorage.getItem('userEmail');
+  if (!email) { window.location.href = '../index.html'; return; }
+
+  // a válaszgombok POZÍCIÓJA (a, b, c, d, ...) mindig fix marad a rácsban;
+  // csak az, hogy melyik szöveg kerül az adott pozícióba, van kavarva.
+  var answers = JSON.parse(document.getElementById('answer-data').textContent);
+  for (var i = answers.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = answers[i]; answers[i] = answers[j]; answers[j] = tmp;
+  }
+
+  var buttons = document.querySelectorAll('#answers button.answer-btn');
+  buttons.forEach(function (btn, i) {
+    var slot = btn.dataset.slot;
+    var ans = answers[i];
+    btn.innerHTML = slot + ') ' + ans.text;
+    btn.dataset.letter = ans.letter;  // az eredeti azonosító, ez megy a szerverre
+  });
+
+  var answered = false;
+
+  window.selectAnswer = function (btn) {
+    if (answered) return;
+    answered = true;
+    var all = document.querySelectorAll('#answers button.answer-btn');
+    all.forEach(function (b) { b.disabled = true; });
+    btn.classList.add('selected');
+
+    var body = document.body;
+    var params = new URLSearchParams({
+      action: 'submit',
+      email: email,
+      test: body.dataset.test,
+      feladat: body.dataset.feladat,
+      letter: btn.dataset.letter
+    });
+
+    // GET kérést használunk POST helyett: a Google Apps Script Web App-oknál a POST
+    // kérések fetch()-csel gyakran "Failed to fetch" hibával futnak el (a szerver belső
+    // átirányítása miatt), miközben a GET kérések megbízhatóan működnek - lásd whoami is.
+    fetch(APPS_SCRIPT_URL + '?' + params.toString())
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        var fb = document.getElementById('feedback');
+        if (res.error === 'not_authorized') {
+          fb.textContent = 'Nincs jogosultságod a teszt kitöltéséhez.';
+          fb.className = 'bad';
+          return;
+        }
+        if (res.correct) {
+          btn.classList.add('correct');
+          fb.textContent = 'Helyes válasz!';
+          fb.className = 'ok';
+        } else {
+          btn.classList.add('incorrect');
+          fb.textContent = 'Helytelen válasz.';
+          fb.className = 'bad';
+        }
+        document.getElementById('next-link').style.display = 'inline-block';
+      })
+      .catch(function (err) {
+        document.getElementById('feedback').textContent = 'Hiba a beküldéskor: ' + err;
+      });
+  };
+
+  if (window.MathJax && MathJax.typesetPromise) { MathJax.typesetPromise(); }
+})();
+</script>
+</body>
+</html>
